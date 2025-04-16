@@ -103,19 +103,22 @@ class FeatureExtractor:
             # Most songs fall between 50-200 BPM, so we normalize within that range
             normalized_tempo = max(0.0, min(1.0, (tempo - 50) / 150)) if tempo > 0 else 0.0
             
+            # Convert tempo to float to ensure it's not a numpy array
+            tempo_float = float(tempo)
+            
             # Create tempo features dictionary
             tempo_features = {
-                "bpm": float(tempo),
+                "bpm": tempo_float,
                 "normalized_tempo": float(normalized_tempo),
                 "beat_count": len(beats),
                 "beat_times": beat_times.tolist(),
                 "avg_beat_interval": float(avg_beat_interval),
                 "std_beat_interval": float(std_beat_interval),
                 # Categorize tempo
-                "tempo_category": self._categorize_tempo(tempo)
+                "tempo_category": self._categorize_tempo(tempo_float)
             }
             
-            self.logger.info(f"Tempo extraction complete: {tempo:.2f} BPM")
+            self.logger.info(f"Tempo extraction complete: {tempo_float:.2f} BPM")
             return tempo_features
             
         except Exception as e:

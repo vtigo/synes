@@ -18,8 +18,9 @@ import time
 import logging
 import json
 import numpy as np
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
 
+# Always import these core modules
 from audio_analyzer.input_processor import InputProcessor
 from audio_analyzer.audio_processor import AudioProcessor
 from audio_analyzer.feature_extractor import FeatureExtractor
@@ -27,9 +28,6 @@ from audio_analyzer.data_formatter import DataFormatter
 from llm_interpreter.llm_processor import LLMProcessor
 from llm_interpreter.prompt_manager import PromptManager
 from llm_interpreter.response_parser import ResponseParser
-from visualization_generator.graphics_engine import GraphicsEngine
-from visualization_generator.render_pipeline import RenderPipeline
-from visualization_generator.output_processor import OutputProcessor
 from utils.error_handler import ErrorHandler, AudioProcessingError
 from utils.file_utils import validate_file
 from utils.logging_config import initialize_logging
@@ -152,6 +150,53 @@ def display_feature_summary(features: Dict[str, Any]) -> None:
     logger.info(f"Silence Ratio: {basic_stats.get('silence_ratio', 'N/A'):.4f}")
 
 
+def run_visualization_pipeline(
+    audio_data: Dict[str, Any], 
+    features: Dict[str, Any], 
+    output_file: str,
+    model_path: Optional[str] = None
+) -> bool:
+    """
+    Run the visualization pipeline to generate an MP4 video.
+    
+    Args:
+        audio_data: Dictionary containing audio data.
+        features: Dictionary containing extracted features.
+        output_file: Path to save the output MP4 file.
+        model_path: Optional path to a custom LLM model.
+        
+    Returns:
+        Boolean indicating success.
+    """
+    # Only import visualization components when needed
+    try:
+        from visualization_generator.graphics_engine import GraphicsEngine
+        from visualization_generator.render_pipeline import RenderPipeline
+        from visualization_generator.output_processor import OutputProcessor
+    except ImportError as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to import visualization components: {str(e)}")
+        logger.error(
+            "Make sure moviepy and other visualization dependencies are installed. "
+            "You can run with --extract-only if you only need feature extraction."
+        )
+        return False
+    
+    logger = logging.getLogger(__name__)
+    logger.info("Starting visualization pipeline...")
+    
+    # Run LLM interpretation (placeholder)
+    logger.info("LLM processing would happen here in a full implementation")
+    
+    # Generate visualization (placeholder)
+    logger.info("Visualization generation would happen here in a full implementation")
+    
+    # Output processing (placeholder)
+    logger.info(f"Video would be saved to {output_file} in a full implementation")
+    
+    return True
+
+
 def main():
     """Main execution function for the music visualizer."""
     # Parse arguments
@@ -219,13 +264,17 @@ def main():
                 logger.info(f"Processing completed in {processing_time:.2f} seconds")
                 return 0
             
-            # At this point, we would continue with LLM processing, visualization, etc.
-            # but that's outside the scope of the current task
-            logger.info("Audio features extracted successfully")
+            # Run the visualization pipeline (only if extract_only is False)
+            success = run_visualization_pipeline(
+                audio_data=audio_data, 
+                features=features, 
+                output_file=output_file,
+                model_path=model_path
+            )
             
-            # For now, just print a success message
-            logger.info(f"Audio file processed successfully: {input_file}")
-            logger.info(f"Output would be saved to: {output_file}")
+            if not success:
+                logger.error("Visualization pipeline failed")
+                return 1
             
             # Calculate processing time
             processing_time = time.time() - start_time
