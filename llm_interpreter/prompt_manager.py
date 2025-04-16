@@ -15,51 +15,54 @@ class PromptManager:
         """Initialize the prompt manager."""
         self.logger = logging.getLogger(__name__)
         
-        # Define a raw JSON example that won't be processed by string formatting
-        self.json_example = r'''
+        # Base template without the JSON example
+        self.base_template_part1 = """
+You are an emotional interpreter for music. Analyze the following audio features
+and create a visualization mapping that represents the emotional journey of this music
+through abstract shapes and geometric patterns.
+
+Audio Features:
+- Tempo: {tempo_data}
+- Key: {key_data}
+- Timbre: {timbre_data}
+- Harmony: {harmony_data}
+- Dynamics: {dynamics_data}
+- Texture: {texture_data}
+{temporal_data}
+
+Create a visualization that maps these features to visual elements including colors,
+shapes, patterns, and movements. Your output should be a frame-by-frame description
+of how the visualization evolves.
+
+Output your response as a JSON object with the following structure:
+"""
+
+        # JSON example as a literal string (not processed by string formatting)
+        self.json_example = """
+{
+  "emotional_journey": [list of primary emotions detected],
+  "color_palette": [list of hex color codes],
+  "base_shapes": [list of primary shapes to use],
+  "frames": [
     {
-    "emotional_journey": [list of primary emotions detected],
-    "color_palette": [list of hex color codes],
-    "base_shapes": [list of primary shapes to use],
-    "frames": [
-        {
-        "timestamp": float,
-        "dominant_emotion": string,
-        "secondary_emotion": string,
-        "shapes": [...],
-        "colors": [...],
-        "movements": [...],
-        "transitions": [...]
-        },
-        ...
-    ]
-    }
-    '''
-        
-        # Base prompt template as specified in requirements
-        self.base_template = """
-    You are an emotional interpreter for music. Analyze the following audio features
-    and create a visualization mapping that represents the emotional journey of this music
-    through abstract shapes and geometric patterns.
+      "timestamp": float,
+      "dominant_emotion": string,
+      "secondary_emotion": string,
+      "shapes": [...],
+      "colors": [...],
+      "movements": [...],
+      "transitions": [...]
+    },
+    ...
+  ]
+}
+"""
 
-    Audio Features:
-    - Tempo: {tempo_data}
-    - Key: {key_data}
-    - Timbre: {timbre_data}
-    - Harmony: {harmony_data}
-    - Dynamics: {dynamics_data}
-    - Texture: {texture_data}
-    {temporal_data}
+        # Final part of the template
+        self.base_template_part2 = """
 
-    Create a visualization that maps these features to visual elements including colors,
-    shapes, patterns, and movements. Your output should be a frame-by-frame description
-    of how the visualization evolves.
-
-    Output your response as a JSON object with the following structure:
-    """ + self.json_example + """
-
-    Make sure your response is valid JSON. Don't include any explanations outside the JSON structure.
-    """
+Make sure your response is valid JSON. Don't include any explanations outside the JSON structure.
+"""
     
     def create_prompt(self, formatted_data: Dict[str, Any]) -> str:
         """
@@ -105,8 +108,8 @@ class PromptManager:
         # Format temporal data if available
         temporal_data = self._format_temporal_section(temporal) if temporal else ""
         
-        # Fill the template
-        prompt = self.base_template.format(
+        # Fill the template part 1 (everything before the JSON example)
+        prompt_part1 = self.base_template_part1.format(
             tempo_data=tempo_data,
             key_data=key_data,
             timbre_data=timbre_data,
@@ -115,6 +118,9 @@ class PromptManager:
             texture_data=texture_data,
             temporal_data=temporal_data
         )
+        
+        # Combine all parts to form the complete prompt
+        prompt = prompt_part1 + self.json_example + self.base_template_part2
         
         # Validate the completed prompt
         self._validate_completed_prompt(prompt)

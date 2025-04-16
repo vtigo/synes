@@ -16,28 +16,28 @@ class LLMProcessor:
     Processes LLM inference requests.
     """
     
-    def __init__(self, model_name: str = "llama3", timeout: int = 120):
+    def __init__(self, model_path: Optional[str] = None, timeout: int = 120):
         """
         Initialize the LLM processor.
         
         Args:
-            model_name: Name of the Ollama model to use (default: llama3)
+            model_path: Path or name of the model to use (default: None)
             timeout: Maximum time in seconds to wait for model inference (default: 120)
         """
         self.logger = logging.getLogger(__name__)
-        self.model_name = model_name
+        self.model_path = model_path
         self.timeout = timeout
         
         # Initialize the prompt manager
         self.prompt_manager = PromptManager()
         
-        # Initialize the Ollama interface
-        self.ollama_interface = OllamaInterface(
-            model_name=model_name,
+        # Initialize the LLM interface
+        self.llm_interface = LLMInterface(
+            model_path=model_path,
             timeout=timeout
         )
         
-        self.logger.info(f"Initialized LLM processor with Ollama model: {model_name}")    
+        self.logger.info(f"Initialized LLM processor with model path: {model_path}")
     
     def process(self, formatted_data: Dict[str, Any], stream: bool = False) -> Dict[str, Any]:
         """
@@ -61,11 +61,11 @@ class LLMProcessor:
             # Create prompt using the prompt manager
             prompt = self.prompt_manager.create_prompt(formatted_data)
             
-            # Replace the llm_interface.process call with ollama_interface.process
-            llm_response = self.ollama_interface.process(prompt)
-
-# And then use ollama_interface.extract_json_from_response
-            visualization_params = self.ollama_interface.extract_json_from_response(llm_response)
+            # Process prompt through LLM
+            llm_response = self.llm_interface.process(prompt, stream=stream)
+            
+            # Extract JSON from response
+            visualization_params = self.llm_interface.extract_json_from_response(llm_response)
             
             if visualization_params is None:
                 error_msg = "Failed to extract valid JSON from LLM response"
