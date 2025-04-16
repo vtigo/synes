@@ -47,19 +47,22 @@ def parse_arguments() -> Dict[str, Any]:
     parser.add_argument("--extract-only", action="store_true", 
                         help="Only extract features without generating visualization")
     parser.add_argument("--save-features", help="Path to save extracted features as JSON")
+    parser.add_argument("--temporal", action="store_true",
+                        help="Include temporal feature analysis (takes longer)")
     
     args = parser.parse_args()
     return vars(args)
 
 
-def extract_audio_features(audio_data: Dict[str, Any], config_params: Dict[str, Any] = None) -> Dict[str, Any]:
+def extract_audio_features(audio_data: Dict[str, Any], config_params: Dict[str, Any] = None, include_temporal: bool = False) -> Dict[str, Any]:
     """
     Extract audio features from the provided audio data.
     
     Args:
         audio_data: Dictionary containing audio waveform and metadata.
         config_params: Optional configuration parameters for feature extraction.
-        
+        include_temporal: Whether to include temporal features (default: False).
+            
     Returns:
         Dictionary containing extracted audio features.
         
@@ -69,11 +72,14 @@ def extract_audio_features(audio_data: Dict[str, Any], config_params: Dict[str, 
     logger = logging.getLogger(__name__)
     logger.info("Starting audio feature extraction...")
     
+    if include_temporal:
+        logger.info("Including temporal feature analysis (this may take longer)")
+    
     # Initialize feature extractor
     feature_extractor = FeatureExtractor(config=config_params)
     
     # Extract features
-    features = feature_extractor.extract_features(audio_data)
+    features = feature_extractor.extract_features(audio_data, include_temporal=include_temporal)
     
     logger.info("Feature extraction completed successfully")
     
@@ -133,21 +139,54 @@ def display_feature_summary(features: Dict[str, Any]) -> None:
     
     # Display tempo information
     logger.info("=== Tempo Information ===")
-    logger.info(f"BPM: {tempo_info.get('bpm', 'N/A'):.2f}")
+    # Fix the issue with potential string values
+    bpm = tempo_info.get('bpm', 'N/A')
+    if isinstance(bpm, (int, float)):
+        logger.info(f"BPM: {bpm:.2f}")
+    else:
+        logger.info(f"BPM: {bpm}")
+        
     logger.info(f"Tempo Category: {tempo_info.get('tempo_category', 'N/A')}")
     logger.info(f"Beat Count: {tempo_info.get('beat_count', 'N/A')}")
     
     # Display key information
     logger.info("=== Key Information ===")
     logger.info(f"Key: {key_info.get('key', 'N/A')} {key_info.get('mode', 'N/A')}")
-    logger.info(f"Confidence: {key_info.get('confidence', 'N/A'):.4f}")
+    
+    # Fix the issue with potential string values
+    confidence = key_info.get('confidence', 'N/A')
+    if isinstance(confidence, (int, float)):
+        logger.info(f"Confidence: {confidence:.4f}")
+    else:
+        logger.info(f"Confidence: {confidence}")
     
     # Display basic statistics
     logger.info("=== Basic Audio Statistics ===")
-    logger.info(f"Duration: {basic_stats.get('duration', 'N/A'):.2f} seconds")
-    logger.info(f"RMS Energy: {basic_stats.get('rms', 'N/A'):.4f}")
-    logger.info(f"Dynamic Range: {basic_stats.get('dynamic_range', 'N/A'):.4f}")
-    logger.info(f"Silence Ratio: {basic_stats.get('silence_ratio', 'N/A'):.4f}")
+    
+    # Fix the issue with potential string values
+    duration = basic_stats.get('duration', 'N/A')
+    if isinstance(duration, (int, float)):
+        logger.info(f"Duration: {duration:.2f} seconds")
+    else:
+        logger.info(f"Duration: {duration}")
+        
+    rms = basic_stats.get('rms', 'N/A')
+    if isinstance(rms, (int, float)):
+        logger.info(f"RMS Energy: {rms:.4f}")
+    else:
+        logger.info(f"RMS Energy: {rms}")
+        
+    dynamic_range = basic_stats.get('dynamic_range', 'N/A')
+    if isinstance(dynamic_range, (int, float)):
+        logger.info(f"Dynamic Range: {dynamic_range:.4f}")
+    else:
+        logger.info(f"Dynamic Range: {dynamic_range}")
+        
+    silence_ratio = basic_stats.get('silence_ratio', 'N/A')
+    if isinstance(silence_ratio, (int, float)):
+        logger.info(f"Silence Ratio: {silence_ratio:.4f}")
+    else:
+        logger.info(f"Silence Ratio: {silence_ratio}")
 
 
 def run_visualization_pipeline(
@@ -248,7 +287,11 @@ def main():
             
             # Extract audio features
             logger.info("Extracting audio features...")
-            features = extract_audio_features(audio_data, config.AUDIO_CONFIG)
+            features = extract_audio_features(
+                audio_data, 
+                config.AUDIO_CONFIG,
+                include_temporal=args.get("temporal", False)
+            )
             
             # Display feature summary
             display_feature_summary(features)
