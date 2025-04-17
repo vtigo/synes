@@ -27,7 +27,7 @@ from audio_analyzer.feature_extractor import FeatureExtractor
 from audio_analyzer.data_formatter import DataFormatter
 from llm_interpreter.llm_processor import LLMProcessor
 from llm_interpreter.prompt_manager import PromptManager
-from llm_interpreter.response_parser import ResponseParser
+from llm_interpreter.response_processor import ResponseParser
 from utils.error_handler import ErrorHandler, AudioProcessingError
 from utils.file_utils import validate_file
 from utils.logging_config import initialize_logging
